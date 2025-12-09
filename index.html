@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>Badminton Queue</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="top-bar">
+    <h1>Badminton Queue</h1>
+    <p class="subtitle">จัดคิวเล่นคู่ 16 คนให้ทั่วถึง</p>
+  </header>
+
+  <main class="container">
+
+    <!-- การเพิ่มผู้เล่น -->
+    <section class="card">
+      <h2 class="card-title">เพิ่มผู้เล่น (สูงสุด 16 คน)</h2>
+      <div class="input-row">
+        <input 
+          id="player-name" 
+          type="text" 
+          placeholder="พิมพ์ชื่อ เช่น Best, Mix, Guide">
+        <button id="add-player-btn" class="btn primary">เพิ่ม</button>
+      </div>
+      <p class="hint">แนะนำให้ใส่ชื่อเล่นสั้น ๆ จะอ่านง่ายตอนจัดรอบ</p>
+    </section>
+
+    <!-- รายชื่อผู้เล่น -->
+    <section class="card">
+      <h2 class="card-title">รายชื่อผู้เล่น & สถิติ</h2>
+      <ul id="players-list" class="player-list">
+        <!-- เติมจาก app.js -->
+      </ul>
+    </section>
+
+    <!-- สร้างรอบ -->
+    <section class="card">
+      <h2 class="card-title">จัดรอบการเล่น</h2>
+      <button id="next-round-btn" class="btn full-width">สร้างรอบถัดไป</button>
+
+      <div class="round-box">
+        <div id="round-info" class="round-info">
+          <!-- แสดงชื่อคนที่ลงรอบนี้ -->
+        </div>
+        <div id="pair-info" class="pair-info">
+          <!-- แสดงคู่ -->
+        </div>
+      </div>
+
+      <p class="hint">
+        ระบบจะให้ 2 คนที่นั่งรอบที่แล้วได้เล่นก่อน แล้วสุ่มอีก 2 คนจากรอบก่อนหน้า
+        พร้อมพยายามไม่ให้ซ้ำคู่เดิม
+      </p>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <span>Prototype by Best Phumrapee 🏸</span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
