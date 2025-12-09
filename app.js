@@ -125,26 +125,13 @@ nextRoundBtn.addEventListener('click', () => {
 
 // ==========================
 // สร้างรอบใหม่:
-//   1) ต้องมี "คนที่นั่งรอบที่แล้ว" อย่างน้อยครึ่งหนึ่งของ 4 คน
-//   2) เลือกคู่ที่ซ้ำกันน้อยที่สุด
-//   3) ดูคนที่รอนาน / เล่นน้อย
+//   1) เน้นคู่ใหม่ / คู่ที่ยังไม่ค่อยได้คู่กัน
+//   2) ดึงคนที่รอนาน / เล่นน้อยขึ้นมาก่อน
 // ==========================
 function createNextRound() {
   const currentRound = roundNumber + 1;
   const allPlayers = [...players];
   const allIds = allPlayers.map(p => p.id);
-
-  const lastSet = new Set(lastRoundPlayingIds);
-  const satIds = allPlayers
-    .map(p => p.id)
-    .filter(id => !lastSet.has(id));
-  const totalSat = satIds.length;
-  const satSet = new Set(satIds);
-
-  // ต้องการให้มีคนที่นั่งรอบที่แล้วอย่างน้อยครึ่งหนึ่งของ COURT_SIZE
-  const minSatNeeded = totalSat > 0
-    ? Math.min(Math.floor(COURT_SIZE / 2), totalSat)
-    : 0;
 
   let bestOption = null;
   const combos = combinations(allIds, COURT_SIZE);
@@ -152,19 +139,11 @@ function createNextRound() {
   combos.forEach(comboIds => {
     const groupPlayers = comboIds.map(id => allPlayers.find(p => p.id === id));
 
-    // นับว่ากลุ่มนี้มี "คนที่นั่งรอบที่แล้ว" กี่คน
-    const satInGroup = groupPlayers.filter(p => satSet.has(p.id)).length;
-
-    // ถ้ามีคนที่นั่งรอบที่แล้วอยู่ แต่กลุ่มนี้เลือกมาน้อยกว่าที่กำหนด → ข้ามเลย
-    if (totalSat > 0 && satInGroup < minSatNeeded) {
-      return;
-    }
-
-    // เลือกวิธีจับคู่ที่ดีที่สุดในกลุ่ม 4 คนนี้
+    // เลือกการจับคู่ที่ดีที่สุดใน 4 คนนี้ (ดู pairCount ด้วย)
     const pairingResult = selectBestPairing(groupPlayers);
     const pairScore = pairingResult.score;
 
-    // คนที่รอนาน: currentRound - lastPlayedRound
+    // คนที่รอนาน (รอบปัจจุบัน - รอบที่เล่นล่าสุด)
     const waitSum = groupPlayers.reduce(
       (sum, p) => sum + (currentRound - (p.lastPlayedRound || 0)),
       0
@@ -176,15 +155,23 @@ function createNextRound() {
       0
     );
 
-    // fairnessScore:
-    //  - pairScore: เน้นกระจายคู่ / หลีกเลี่ยงคู่ที่เล่นกันบ่อย
-    //  - waitSum: ดึงคนที่รอนาน
-    //  - gamesSum: ลดถ้าเล่นเยอะแล้ว
+    // คนที่ "ไม่" อยู่ในรอบที่แล้ว (คือคนนั่งเมื่อกี้)
+    const numSatLastRound = groupPlayers.filter(
+      p => !lastRoundPlayingIds.includes(p.id)
+    ).length;
+
+    // คะแนนรวม:
+    //  - pairScore: กระจายคู่, เลี่ยงคู่ที่เล่นกันบ่อย
+    //  - waitSum: ให้คนที่รอนานได้ลง
+    //  - numSatLastRound: ถ้าเพิ่งนั่งรอบที่แล้ว จะมีน้ำหนักเพิ่ม
+    //  - gamesSum: ถ้าเคยเล่นเยอะแล้ว จะโดนหักคะแนนหน่อย
     const fairnessScore =
-      pairScore * 10 +
-      waitSum * 2 -
+      pairScore * 10 +        // เน้น pattern คู่ก่อนสุด
+      waitSum * 3 +
+      numSatLastRound * 20 -
       gamesSum;
 
+    // random นิด ๆ กันแพทเทิร์นแข็งเกิน
     const jitter = Math.random();
 
     if (
@@ -202,49 +189,13 @@ function createNextRound() {
     }
   });
 
-  // เผื่อกรณีเงื่อนไขแน่นไปจนหา combo ไม่เจอเลย → fallback กลับไปไม่บังคับ minSat
-  if (!bestOption) {
-    const combosAll = combinations(allIds, COURT_SIZE);
-    combosAll.forEach(comboIds => {
-      const groupPlayers = comboIds.map(id => allPlayers.find(p => p.id === id));
-      const pairingResult = selectBestPairing(groupPlayers);
-      const pairScore = pairingResult.score;
-
-      const waitSum = groupPlayers.reduce(
-        (sum, p) => sum + (currentRound - (p.lastPlayedRound || 0)),
-        0
-      );
-      const gamesSum = groupPlayers.reduce(
-        (sum, p) => sum + p.gamesPlayed,
-        0
-      );
-
-      const fairnessScore = pairScore * 10 + waitSum * 2 - gamesSum;
-      const jitter = Math.random();
-
-      if (
-        !bestOption ||
-        fairnessScore > bestOption.fairnessScore ||
-        (fairnessScore === bestOption.fairnessScore &&
-          jitter > bestOption.jitter)
-      ) {
-        bestOption = {
-          selectedPlayers: groupPlayers,
-          pairs: pairingResult.pairs,
-          fairnessScore,
-          jitter
-        };
-      }
-    });
-  }
-
   return bestOption;
 }
 
 // ==========================
 // เลือกการจับคู่ในกลุ่ม 4 คน
-//   - ลด "max pairCount" ก่อน (คู่ที่โดนจับบ่อยสุดใน pattern นี้)
-//   - เพิ่มคู่ใหม่ / คู่น้อยครั้ง
+//   - ถ้ามีคู่ใหม่ → ให้คะแนนสูง
+//   - ถ้าต้องใช้คู่เดิม → ใช้คู่ที่เล่นกันน้อยรอบกว่า
 // ==========================
 function selectBestPairing(players4) {
   const patterns = [
@@ -256,36 +207,48 @@ function selectBestPairing(players4) {
   let best = null;
 
   patterns.forEach(pattern => {
+    let newPairs = 0;
+    let repeatPairs = 0;
+    let sumPairCount = 0;
+    let maxPairCount = 0;
     const pairs = [];
-    const counts = [];
 
     pattern.forEach(([i, j]) => {
       const a = players4[i];
       const b = players4[j];
       const key = pairKey(a.id, b.id);
       const count = pairCount.get(key) || 0;
+
+      if (count === 0) {
+        newPairs++;
+      } else {
+        repeatPairs++;
+      }
+
+      sumPairCount += count;
+      if (count > maxPairCount) maxPairCount = count;
+
       pairs.push([a, b]);
-      counts.push(count);
     });
 
-    const maxCount = Math.max(...counts);
-    const sumCount = counts.reduce((s, c) => s + c, 0);
-    const newPairs = counts.filter(c => c === 0).length;
+    // คิดคะแนน pattern นี้
+    //  - newPairs เยอะ = ดีมาก
+    //  - sumPairCount / maxPairCount เยอะ = แปลว่าคู่นี้เคยเล่นด้วยกันบ่อย → หักคะแนน
+    //  - repeatPairs = แค่จำนวนคู่ที่ไม่ใช่คู่ใหม่
+    const score =
+      newPairs * 200 -       // ดันคู่ใหม่เต็มที่
+      sumPairCount * 15 -    // ถ้าคู่นี้เคยเล่นกันหลายรอบแล้ว หักหนักหน่อย
+      maxPairCount * 10 -
+      repeatPairs * 5;
 
-    // อยากได้ pattern ที่:
-    // 1) maxCount น้อยที่สุด (ไม่มีคู่ไหนโดน spam)
-    // 2) newPairs เยอะที่สุด
-    // 3) sumCount น้อยที่สุด
-    let score =
-      -maxCount * 1000 +   // หลีกเลี่ยงคู่ที่เล่นกันบ่อยที่สุดก่อน
-      newPairs * 50 -
-      sumCount * 5;
+    const jitter = Math.random(); // กันเท่ากันแล้วเลือก pattern แรกซ้ำ
 
-    const jitter = Math.random();
-    score += jitter; // กัน pattern เดิมซ้ำเมื่อคะแนนเท่ากันพอดี
-
-    if (!best || score > best.score) {
-      best = { pairs, score };
+    if (
+      !best ||
+      score > best.score ||
+      (score === best.score && jitter > best.jitter)
+    ) {
+      best = { pairs, score, jitter };
     }
   });
 
