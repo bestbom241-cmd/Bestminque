@@ -15,14 +15,31 @@ body {
   margin: 0 auto;
   padding: 12px 12px 60px;
 }
-
-/* Top bar */
 .top-bar {
-  background: linear-gradient(135deg, #4f46e5, #6366f1);
+  position: relative;
+  height: 120px; /* สูงกำลังดี */
+  background: linear-gradient(135deg, #ff60ec, #e2e8f0);
+  color: #111;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
   color: white;
-  padding: 16px 12px 20px;
   text-align: center;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  padding: 0 12px;
+}
+
+
+/* ถ้าต้องการใส่ overlay ให้ข้อความอ่านง่ายขึ้น */
+.top-bar::before {
+  content: none; /* เปลี่ยนเป็น '""' เพื่อเปิดใช้งาน overlay */
+}
+
+.top-bar h1,
+.top-bar .subtitle {
+  position: relative;
+  z-index: 1;
 }
 
 .top-bar h1 {
@@ -100,8 +117,37 @@ input[type="text"]:focus {
 
 .btn.full-width {
   width: 100%;
-  margin-top: 6px;
+  margin-top: 8px;
 }
+
+.btn.small {
+  padding: 6px 10px;
+  font-size: 0.85rem;
+}
+
+.winner-buttons .btn.small {
+  cursor: pointer;
+}
+
+
+/* Hover ให้รู้ว่ากำลังกดคู่ไหน */
+.winner-buttons .btn.small:hover {
+  background: #4f46e5;
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.35);
+}
+
+/* ปุ่มเมื่อถูกเลือก (คลิกแล้วค้าง) */
+.winner-buttons .btn.small.selected {
+  background: #ff0000; /* สีฟ้าเข้ม */
+  color: white;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.4);
+  transform: translateY(0);
+}
+
+
+
 
 /* Hint text */
 .hint {
@@ -146,6 +192,38 @@ input[type="text"]:focus {
   color: #374151;
 }
 
+/* Mode switch */
+.mode-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.mode-label {
+  font-size: 0.9rem;
+  color: #4b5563;
+}
+
+.mode-switch {
+  display: flex;
+  gap: 6px;
+}
+
+.mode-btn {
+  background: #e5e7eb;
+  color: #374151;
+  box-shadow: none;
+  padding-inline: 10px;
+}
+
+.mode-btn.active {
+  background: #4f46e5;
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(79,70,229,0.35);
+}
+
 /* Round box */
 .round-box {
   margin-top: 10px;
@@ -163,6 +241,24 @@ input[type="text"]:focus {
 
 .pair-info {
   line-height: 1.5;
+}
+
+/* Winner controls */
+.winner-controls {
+  margin-top: 10px;
+  border-top: 1px dashed #e5e7eb;
+  padding-top: 8px;
+}
+
+.winner-text {
+  margin: 0 0 6px;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.winner-buttons {
+  display: flex;
+  gap: 6px;
 }
 
 /* Footer */
@@ -188,5 +284,10 @@ input[type="text"]:focus {
 
   .top-bar h1 {
     font-size: 1.3rem;
+  }
+
+  .mode-row {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
