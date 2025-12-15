@@ -10,27 +10,27 @@
 
   <header class="top-bar">
     <h1>Bestminton Queue V3</h1>
-    <p class="subtitle">เค้าจะจับคู่ให้เตงเองนะไอต้าว😘</p>
+    <p class="subtitle">Matching your doubles with us</p>
   </header>
 
   <main class="container">
 
     <!-- การเพิ่มผู้เล่น -->
     <section class="card">
-      <h2 class="card-title">เพิ่มผู้เล่น (สูงสุด 16 คน)</h2>
+      <h2 class="card-title">Add new players (Max 16 persons)</h2>
       <div class="input-row">
         <input 
           id="player-name" 
           type="text" 
-          placeholder="พิมพ์ชื่อ เช่น Best, Mix, Guide">
-        <button id="add-player-btn" class="btn primary">เพิ่ม</button>
+          placeholder="Type your short name e.g. Best, Mix, Guide">
+        <button id="add-player-btn" class="btn primary">Add</button>
       </div>
-      <p class="hint">แนะนำให้ใส่ชื่อเล่นสั้น ๆ จะอ่านง่ายตอนจัดรอบ</p>
+      <p class="hint">Input players name for team queing</p>
     </section>
 
     <!-- รายชื่อผู้เล่น -->
     <section class="card">
-      <h2 class="card-title">รายชื่อผู้เล่น & สถิติ</h2>
+      <h2 class="card-title">Team member & Stat</h2>
       <ul id="players-list" class="player-list">
         <!-- เติมจาก app.js -->
       </ul>
@@ -38,22 +38,22 @@
 
     <!-- สร้างรอบ -->
     <section class="card">
-      <h2 class="card-title">จัดรอบการเล่น</h2>
+      <h2 class="card-title">Queing play round</h2>
 
       <!-- โหมดสุ่ม -->
       <div class="mode-row">
-        <span class="mode-label">โหมดสุ่ม:</span>
+        <span class="mode-label">Random Mode:</span>
         <div class="mode-switch">
           <button id="mode-normal" class="btn mode-btn active">
-            สุ่มปกติ
+            Normal Mode
           </button>
           <button id="mode-winner" class="btn mode-btn">
-            ผู้ชนะอยู่ต่อ 1 รอบ
+            Winner Mode
           </button>
         </div>
       </div>
 
-      <button id="next-round-btn" class="btn full-width">สร้างรอบถัดไป</button>
+      <button id="next-round-btn" class="btn full-width">Random team next round</button>
 
       <div class="round-box">
         <div id="round-info" class="round-info">
@@ -66,18 +66,18 @@
         <!-- เลือกผู้ชนะ ใช้ในโหมด "ผู้ชนะอยู่ต่อ" -->
         <div id="winner-controls" class="winner-controls">
           <p class="winner-text">
-            เลือกคู่ที่ชนะรอบนี้ (ใช้เมื่อเลือกโหมด “ผู้ชนะอยู่ต่อ 1 รอบ”)
+            Select winner team (utilize when "Winner Mode" is active)
           </p>
           <div class="winner-buttons">
-            <button id="winner-pair1" class="btn small">คู่ที่ 1 ชนะ</button>
-            <button id="winner-pair2" class="btn small">คู่ที่ 2 ชนะ</button>
+            <button id="winner-pair1" class="btn small">1st team win</button>
+            <button id="winner-pair2" class="btn small">2nd team win</button>
           </div>
         </div>
       </div>
 
       <p class="hint">
-        • โหมดสุ่มปกติ: ระบบกระจายคู่ให้ไม่ซ้ำบ่อยและเล่นใกล้เคียงกัน<br>
-        • โหมดผู้ชนะอยู่ต่อ: คู่ที่ชนะจะได้เล่นต่ออีก 1 รอบ แล้วค่อยกลับไปเข้าคิวปกติ
+        • Normal Mode: Random every round regardless which is wining<br>
+        • Winner Mode: Winner team stays for next round, loser rotates out
       </p>
     </section>
 

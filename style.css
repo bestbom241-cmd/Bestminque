@@ -291,3 +291,33 @@ input[type="text"]:focus {
     align-items: flex-start;
   }
 }
+/* Base button */
+#next-round-btn {
+  background: #fdfdfd;
+  border: 2px solid #2925ff;
+  color: #000000; /* ฟ้าอ่อนแทนขาว */
+  transition: 
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+}
+
+/* Hover = blue glow */
+#next-round-btn:hover {
+  background: #4338ca;
+  transform: translateY(-2px);
+  box-shadow:
+    0 0 0 2px rgba(59, 130, 246, 0.35),
+    0 0 20px rgba(59, 130, 246, 0.6),
+    0 10px 22px rgba(30, 64, 175, 0.5);
+}
+
+/* Click (active) = ฟ้าค้าง */
+#next-round-btn:active {
+  background: #2563eb; /* ฟ้าน้ำเงินชัด */
+  color: #dbeafe;      /* ฟ้าอ่อน อ่านง่าย */
+  transform: translateY(0);
+  box-shadow:
+    0 0 0 3px rgba(37, 99, 235, 0.6),
+    0 0 25px rgba(37, 99, 235, 0.7);
+}
