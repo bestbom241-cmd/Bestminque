@@ -161,7 +161,7 @@ function renderPlayers() {
 
     const badge = document.createElement("span");
     badge.className = "badge";
-    badge.textContent = `เล่นแล้ว ${p.gamesPlayed} เกม`;
+    badge.textContent = `Played ${p.gamesPlayed} games`;
 
     li.appendChild(nameSpan);
     li.appendChild(badge);
