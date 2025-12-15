@@ -1,0 +1,153 @@
+:root {
+  color-scheme: dark;
+  font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont,
+    "Helvetica Neue", sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 2rem;
+  background: radial-gradient(circle at top, #1e293b, #0f172a 60%, #020617);
+  color: #e2e8f0;
+}
+
+.site-card {
+  width: min(960px, 100%);
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(226, 232, 240, 0.12);
+  border-radius: 1.5rem;
+  box-shadow: 0 20px 60px rgba(2, 6, 23, 0.65);
+  overflow: hidden;
+}
+
+.hero {
+  padding: 2.5rem 3rem 2rem;
+  background: linear-gradient(120deg, #570df8, #9333ea);
+  color: #fff;
+}
+
+.hero .eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 0.8rem;
+  opacity: 0.85;
+  margin: 0 0 0.75rem;
+}
+
+.hero h1 {
+  margin: 0 0 0.75rem;
+  font-size: clamp(2rem, 5vw, 2.85rem);
+}
+
+.hero p {
+  margin: 0;
+  max-width: 52ch;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+main {
+  padding: 2.5rem 3rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.content-section h2 {
+  margin-top: 0;
+  font-size: 1.4rem;
+}
+
+.message-panel {
+  margin-top: 0.75rem;
+  padding: 1.25rem;
+  border-radius: 0.85rem;
+  border: 1px solid rgba(226, 232, 240, 0.2);
+  background: rgba(15, 23, 42, 0.6);
+  min-height: 90px;
+}
+
+.media-card figure {
+  margin: 0;
+  border-radius: 1rem;
+  overflow: hidden;
+  border: 1px solid rgba(226, 232, 240, 0.2);
+}
+
+.media-card img,
+.media-card iframe {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.media-card figcaption {
+  padding: 1rem 1.25rem;
+  background: rgba(2, 6, 23, 0.7);
+  font-size: 0.95rem;
+  color: rgba(226, 232, 240, 0.9);
+}
+
+.nav-buttons {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.5rem;
+  border-radius: 999px;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  background: linear-gradient(120deg, #2563eb, #7c3aed);
+  box-shadow: 0 15px 30px rgba(37, 99, 235, 0.3);
+}
+
+.btn.secondary {
+  background: transparent;
+  border: 1px solid rgba(226, 232, 240, 0.4);
+  box-shadow: none;
+}
+
+.btn:hover,
+.btn:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 35px rgba(37, 99, 235, 0.45);
+}
+
+@media (max-width: 720px) {
+  body {
+    padding: 1rem;
+  }
+
+  .site-card {
+    border-radius: 1rem;
+  }
+
+  .hero,
+  main {
+    padding: 1.75rem;
+  }
+
+  .nav-buttons {
+    flex-direction: column;
+  }
+}

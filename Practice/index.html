@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>โปรแกรมแปลงหน่วย</title>
+</head>
+
+<body>
+    <h3>โปรแกรมแปลงหน่วย</h3>
+    <input id ="inputValue" type="text" placeholder="กรอกค่าที่ต้องการแปลง">
+    <div id="toCelsius"></div>
+    <div id="toFahrenheit"></div>
+
+    <button onclick="toCelsiusProgram(document.getElementById('inputValue').value)">แปลงเป็น Celsius</button>
+    <button onclick="toFahrenheitProgram(document.getElementById('inputValue').value)">แปลงเป็น Fahrenheit</button>
+
+    <script src="app.js"></script>
+</body>
+</html>

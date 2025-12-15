@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>Bestminton Queue V3</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="top-bar">
+    <h1>Bestminton Queue V3</h1>
+    <p class="subtitle">Matching your doubles with us</p>
+  </header>
+
+  <main class="container">
+
+    <!-- การเพิ่มผู้เล่น -->
+    <section class="card">
+      <h2 class="card-title">Add new players (Max 16 persons)</h2>
+      <div class="input-row">
+        <input 
+          id="player-name" 
+          type="text" 
+          placeholder="Type your short name e.g. Best, Mix, Guide">
+        <button id="add-player-btn" class="btn primary">Add</button>
+      </div>
+      <p class="hint">Input players name for team queing</p>
+    </section>
+
+    <!-- รายชื่อผู้เล่น -->
+    <section class="card">
+      <h2 class="card-title">Team member & Stat</h2>
+      <ul id="players-list" class="player-list">
+        <!-- เติมจาก app.js -->
+      </ul>
+    </section>
+
+    <!-- สร้างรอบ -->
+    <section class="card">
+      <h2 class="card-title">Queing play round</h2>
+
+      <!-- โหมดสุ่ม -->
+      <div class="mode-row">
+        <span class="mode-label">Random Mode:</span>
+        <div class="mode-switch">
+          <button id="mode-normal" class="btn mode-btn active">
+            Normal Mode
+          </button>
+          <button id="mode-winner" class="btn mode-btn">
+            Winner Mode
+          </button>
+        </div>
+      </div>
+
+      <button id="next-round-btn" class="btn full-width">Random team next round</button>
+
+      <div class="round-box">
+        <div id="round-info" class="round-info">
+          <!-- แสดงชื่อคนที่ลงรอบนี้ -->
+        </div>
+        <div id="pair-info" class="pair-info">
+          <!-- แสดงคู่ -->
+        </div>
+
+        <!-- เลือกผู้ชนะ ใช้ในโหมด "ผู้ชนะอยู่ต่อ" -->
+        <div id="winner-controls" class="winner-controls">
+          <p class="winner-text">
+            Select winner team (utilize when "Winner Mode" is active)
+          </p>
+          <div class="winner-buttons">
+            <button id="winner-pair1" class="btn small">1st team win</button>
+            <button id="winner-pair2" class="btn small">2nd team win</button>
+          </div>
+        </div>
+      </div>
+
+      <p class="hint">
+        • Normal Mode: Random every round regardless which is wining<br>
+        • Winner Mode: Winner team stays for next round, loser rotates out
+      </p>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <span>Prototype by Best Phumrapee 🏸</span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
