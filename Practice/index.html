@@ -1,19 +1,92 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <title>โปรแกรมแปลงหน่วย</title>
+  <meta charset="UTF-8">
+  <title>Vue.js Playground</title>
+
+  <!-- Vue 3 CDN -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f4f6fb;
+      padding: 40px;
+    }
+
+    .card {
+      max-width: 420px;
+      margin: auto;
+      background: #fff;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      margin-top: 0;
+    }
+
+    button {
+      padding: 8px 14px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background: #3b82f6;
+      color: #fff;
+      font-size: 14px;
+    }
+
+    button:hover {
+      background: #2563eb;
+    }
+
+    input {
+      padding: 6px;
+      margin-top: 6px;
+      width: 100%;
+    }
+  </style>
 </head>
 
 <body>
-    <h3>โปรแกรมแปลงหน่วย</h3>
-    <input id ="inputValue" type="text" placeholder="กรอกค่าที่ต้องการแปลง">
-    <div id="toCelsius"></div>
-    <div id="toFahrenheit"></div>
 
-    <button onclick="toCelsiusProgram(document.getElementById('inputValue').value)">แปลงเป็น Celsius</button>
-    <button onclick="toFahrenheitProgram(document.getElementById('inputValue').value)">แปลงเป็น Fahrenheit</button>
+  <div id="app" class="card">
+    <h2>Vue.js Playground 🚀</h2>
 
-    <script src="app.js"></script>
+    <p>ยอดขายวันนี้: <b>{{ sales }}</b></p>
+
+    <button @click="increaseSales">
+      เพิ่มยอดขาย
+    </button>
+
+    <hr>
+
+    <label>
+      เปลี่ยนชื่อสินค้า:
+      <input v-model="productName" />
+    </label>
+
+    <p>สินค้า: <b>{{ productName }}</b></p>
+  </div>
+
+  <script>
+    const { createApp } = Vue
+
+    createApp({
+      data() {
+        return {
+          sales: 10,
+          productName: "Apple"
+        }
+      },
+      methods: {
+        increaseSales() {
+          this.sales++
+        }
+      }
+    }).mount('#app')
+  </script>
+
 </body>
 </html>
