@@ -32,8 +32,9 @@ class Config:
 
 def _ensure_datetime(df: pd.DataFrame, col: str) -> pd.DataFrame:
     out = df.copy()
-    out[col] = pd.to_datetime(out[col])
+    out[col] = pd.to_datetime(out[col], errors="coerce")
     return out
+
 
 
 def make_features(df: pd.DataFrame, cfg: Config) -> Tuple[pd.DataFrame, List[str], List[str]]:
@@ -46,11 +47,14 @@ def make_features(df: pd.DataFrame, cfg: Config) -> Tuple[pd.DataFrame, List[str
     df = _ensure_datetime(df, cfg.date_col)
     df = df.sort_values([cfg.store_col, cfg.sku_col, cfg.date_col]).copy()
 
-    # calendar features
-    df["dow"] = df[cfg.date_col].dt.dayofweek.astype(int)
-    df["month"] = df[cfg.date_col].dt.month.astype(int)
-    df["weekofyear"] = df[cfg.date_col].dt.isocalendar().week.astype(int)
-    df["is_weekend"] = (df["dow"] >= 5).astype(int)
+    # calendar features (SAFE)
+    df["dow"] = df[cfg.date_col].dt.dayofweek.astype("Int64")
+    df["month"] = df[cfg.date_col].dt.month.astype("Int64")
+    df["weekofyear"] = df[cfg.date_col].dt.isocalendar().week.astype("Int64")
+
+    # ถ้า dow เป็น <NA> จะได้ is_weekend เป็น <NA> ด้วย -> เติม 0 ก่อน
+    df["is_weekend"] = (df["dow"] >= 5).fillna(False).astype(int)
+
 
     grp = df.groupby([cfg.store_col, cfg.sku_col], sort=False)
 
