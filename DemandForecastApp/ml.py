@@ -21,12 +21,13 @@ class Config:
     lags: Tuple[int, ...] = (1, 7, 14, 28)
     roll_windows: Tuple[int, ...] = (7, 14, 28)
 
-    # train params
-    horizon: int = 1  # predict t+h
-    iterations: int = 2000
+    # train params  👇
+    horizon: int = 1
+    iterations: int = 1000      # 🔥 เปลี่ยนตรงนี้
     depth: int = 8
     learning_rate: float = 0.05
     random_seed: int = 42
+
 
 
 def _ensure_datetime(df: pd.DataFrame, col: str) -> pd.DataFrame:
@@ -119,13 +120,14 @@ def train_catboost(
     X_val, y_val = val_df[feature_cols], val_df["y"]
 
     model = CatBoostRegressor(
-        loss_function="RMSE",
-        iterations=cfg.iterations,
-        depth=cfg.depth,
-        learning_rate=cfg.learning_rate,
-        random_seed=cfg.random_seed,
-        verbose=200,
-    )
+    iterations=cfg.iterations,        # = 1000
+    learning_rate=cfg.learning_rate,  # = 0.05
+    depth=cfg.depth,                  # = 8
+    loss_function="RMSE",
+    eval_metric="RMSE",               # 🔥 เพิ่ม
+    random_seed=cfg.random_seed,      # = 42
+    verbose=200,
+)
 
     model.fit(
         X_train, y_train,
