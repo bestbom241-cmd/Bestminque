@@ -32,19 +32,14 @@ class Config:
 
 def _ensure_datetime(df: pd.DataFrame, col: str) -> pd.DataFrame:
     out = df.copy()
-    out[col] = pd.to_datetime(out[col], errors="coerce")
+    # รองรับ format 16/8/2017 แบบ dayfirst
+    out[col] = pd.to_datetime(out[col], errors="coerce", dayfirst=True)
     return out
 
 
 
 
 def make_features(df: pd.DataFrame, cfg: Config) -> Tuple[pd.DataFrame, List[str], List[str]]:
-    """
-    Returns:
-      - df_feat: dataframe with features + y (shifted) and cleaned NA
-      - feature_cols: list of feature column names
-      - cat_cols: list of categorical feature names for CatBoost
-    """
     df = _ensure_datetime(df, cfg.date_col)
     df = df.sort_values([cfg.store_col, cfg.sku_col, cfg.date_col]).copy()
 
@@ -52,10 +47,7 @@ def make_features(df: pd.DataFrame, cfg: Config) -> Tuple[pd.DataFrame, List[str
     df["dow"] = df[cfg.date_col].dt.dayofweek.astype("Int64")
     df["month"] = df[cfg.date_col].dt.month.astype("Int64")
     df["weekofyear"] = df[cfg.date_col].dt.isocalendar().week.astype("Int64")
-
-    # ถ้า dow เป็น <NA> จะได้ is_weekend เป็น <NA> ด้วย -> เติม 0 ก่อน
     df["is_weekend"] = (df["dow"] >= 5).fillna(False).astype(int)
-
 
     grp = df.groupby([cfg.store_col, cfg.sku_col], sort=False)
 
@@ -63,25 +55,28 @@ def make_features(df: pd.DataFrame, cfg: Config) -> Tuple[pd.DataFrame, List[str
     for l in cfg.lags:
         df[f"lag_{l}"] = grp[cfg.target_col].shift(l)
 
-    # rolling features (shift 1 to avoid leakage)
-    shifted = grp[cfg.target_col].shift(1)
+    # rolling features (shift 1 to avoid leakage) - ใช้ transform
     for w in cfg.roll_windows:
         df[f"rmean_{w}"] = grp[cfg.target_col].transform(lambda s: s.shift(1).rolling(w).mean())
         df[f"rstd_{w}"]  = grp[cfg.target_col].transform(lambda s: s.shift(1).rolling(w).std())
 
-
-    # optional exogenous
+    # optional exogenous (ถ้าคอลัมน์มี NA เยอะ จะไม่ทำให้ทั้งแถวหายแล้ว)
     extra_cols = []
     if cfg.promo_col and cfg.promo_col in df.columns:
         extra_cols.append(cfg.promo_col)
+        df[cfg.promo_col] = pd.to_numeric(df[cfg.promo_col], errors="coerce").fillna(0)
+
     if cfg.price_col and cfg.price_col in df.columns:
         extra_cols.append(cfg.price_col)
+        df[cfg.price_col] = pd.to_numeric(df[cfg.price_col], errors="coerce")
+        # เติมด้วย median ต่อ SKU/Store ถ้ามี ไม่งั้นเติม median ทั้งชุด
+        df[cfg.price_col] = df.groupby([cfg.store_col, cfg.sku_col])[cfg.price_col].transform(
+            lambda s: s.fillna(s.median())
+        )
+        df[cfg.price_col] = df[cfg.price_col].fillna(df[cfg.price_col].median())
 
-    # target
+    # target (horizon=1 => y = sales ของวันถัดไป)
     df["y"] = grp[cfg.target_col].shift(-cfg.horizon)
-
-    # drop rows with NA from lag/rolling/target
-    df_feat = df.dropna().copy()
 
     feature_cols = [
         cfg.store_col, cfg.sku_col,
@@ -92,25 +87,37 @@ def make_features(df: pd.DataFrame, cfg: Config) -> Tuple[pd.DataFrame, List[str
         *extra_cols
     ]
 
-    cat_cols = [cfg.store_col, cfg.sku_col, "dow", "month"]  # weekofyear optional
+    cat_cols = [cfg.store_col, cfg.sku_col, "dow", "month"]
+
+    # ✅ dropna เฉพาะที่ “จำเป็น” ต่อการ train/predict
+    required = [cfg.date_col, cfg.target_col, "y"] + feature_cols
+    required = [c for c in required if c in df.columns]
+
+    df_feat = df.dropna(subset=required).copy()
+
     return df_feat, feature_cols, cat_cols
 
 
 def time_split(df_feat: pd.DataFrame, cfg: Config, train_end: str, val_end: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """
-    train: date <= train_end
-    val:   train_end < date <= val_end
-    """
-    train_end_dt = pd.to_datetime(train_end)
-    val_end_dt = pd.to_datetime(val_end)
+    train_end_dt = pd.to_datetime(train_end, dayfirst=True)
+    val_end_dt = pd.to_datetime(val_end, dayfirst=True)
+
+    min_dt = df_feat[cfg.date_col].min()
+    max_dt = df_feat[cfg.date_col].max()
 
     train = df_feat[df_feat[cfg.date_col] <= train_end_dt].copy()
     val = df_feat[(df_feat[cfg.date_col] > train_end_dt) & (df_feat[cfg.date_col] <= val_end_dt)].copy()
 
     if len(train) == 0 or len(val) == 0:
-        raise ValueError("Split resulted in empty train/val. Check dates and data range.")
+        raise ValueError(
+            f"Split empty! data range={min_dt} -> {max_dt}, "
+            f"train_end={train_end_dt}, val_end={val_end_dt}, "
+            f"train_rows={len(train)}, val_rows={len(val)}. "
+            f"Tip: ensure min_date < train_end < val_end <= max_date, and allow enough history for lags/rolling."
+        )
 
     return train, val
+
 
 
 def train_catboost(
