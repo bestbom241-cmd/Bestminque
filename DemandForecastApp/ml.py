@@ -32,15 +32,34 @@ class Config:
 
 def _ensure_datetime(df: pd.DataFrame, col: str) -> pd.DataFrame:
     out = df.copy()
-    # รองรับ format 16/8/2017 แบบ dayfirst
-    out[col] = pd.to_datetime(out[col], errors="coerce", dayfirst=True)
+
+    # บังคับเป็น string + trim ช่องว่าง
+    s = out[col].astype(str).str.strip()
+
+    # ลอง parse แบบ dayfirst ก่อน
+    dt = pd.to_datetime(s, errors="coerce", dayfirst=True)
+
+    # ถ้ายัง NaT เยอะ ลอง format ที่พบบ่อย
+    if dt.notna().sum() == 0:
+        dt = pd.to_datetime(s, errors="coerce", format="%d/%m/%Y")
+    if dt.notna().sum() == 0:
+        dt = pd.to_datetime(s, errors="coerce", format="%Y-%m-%d")
+    if dt.notna().sum() == 0:
+        dt = pd.to_datetime(s, errors="coerce", infer_datetime_format=True)
+
+    out[col] = dt
     return out
+
 
 
 
 
 def make_features(df: pd.DataFrame, cfg: Config) -> Tuple[pd.DataFrame, List[str], List[str]]:
     df = _ensure_datetime(df, cfg.date_col)
+    if df[cfg.date_col].notna().sum() == 0:
+        raise ValueError(f"All values in '{cfg.date_col}' failed to parse as datetime. "
+                     f"Example raw values: {df[cfg.date_col].astype(str).head(5).tolist()}")
+
     df = df.sort_values([cfg.store_col, cfg.sku_col, cfg.date_col]).copy()
 
     # calendar features (SAFE)
