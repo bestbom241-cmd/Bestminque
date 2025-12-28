@@ -96,10 +96,17 @@ colA, colB, colC = st.columns([1,1,1])
 with colA:
     if st.button("🚀 Train CatBoost", type="primary"):
         with st.spinner("Training..."):
-            model, info = train_catboost(df, cfg, train_end=train_end, val_end=val_end)
-            st.session_state.model = model
-            st.session_state.model_info = info
-        st.success("Training complete!")
+            try:
+                model, info = train_catboost(df, cfg, train_end=str(train_end), val_end=str(val_end))
+                st.session_state.model = model
+                st.session_state.model_info = info
+                st.success("Training complete!")
+            except Exception as e:
+                # แสดงข้อความ error แบบไม่ถูก redacted
+                st.error("Training failed:")
+                st.code(str(e))
+                st.stop()
+
 
 with colB:
     if st.button("💾 Save model to model.cbm"):
