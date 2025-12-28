@@ -66,8 +66,9 @@ def make_features(df: pd.DataFrame, cfg: Config) -> Tuple[pd.DataFrame, List[str
     # rolling features (shift 1 to avoid leakage)
     shifted = grp[cfg.target_col].shift(1)
     for w in cfg.roll_windows:
-        df[f"rmean_{w}"] = shifted.rolling(w).mean().reset_index(level=[0, 1], drop=True)
-        df[f"rstd_{w}"] = shifted.rolling(w).std().reset_index(level=[0, 1], drop=True)
+        df[f"rmean_{w}"] = grp[cfg.target_col].transform(lambda s: s.shift(1).rolling(w).mean())
+        df[f"rstd_{w}"]  = grp[cfg.target_col].transform(lambda s: s.shift(1).rolling(w).std())
+
 
     # optional exogenous
     extra_cols = []
