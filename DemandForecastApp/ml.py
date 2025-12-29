@@ -115,6 +115,25 @@ def make_features(df: pd.DataFrame, cfg: Config) -> Tuple[pd.DataFrame, List[str
 
     df_feat = df.dropna(subset=required).copy()
 
+    if df_feat.empty:
+        warmup = max(max(cfg.lags), max(cfg.roll_windows)) + cfg.horizon + 1
+    # เช็คจำนวนวันต่อ (store,sku) แบบเร็ว ๆ
+        tmp = df[[cfg.store_col, cfg.sku_col, cfg.date_col]].dropna().copy()
+        tmp["__date__"] = pd.to_datetime(tmp[cfg.date_col], errors="coerce", dayfirst=True)
+        counts = tmp.dropna(subset=["__date__"]).groupby([cfg.store_col, cfg.sku_col])["__date__"].nunique()
+        max_days = int(counts.max()) if len(counts) else 0
+
+    raise ValueError(
+        "No rows left after feature generation (df_feat is empty). "
+        f"Likely not enough history per (store, sku) to build lags/rolling + target.\n"
+        f"Need at least ~{warmup} unique days per series, but max found is {max_days}.\n"
+        "Fix options:\n"
+        "1) Provide more historical dates per store+sku, OR\n"
+        "2) Reduce lags/roll_windows in Config (e.g., lags=(1,7), roll_windows=(7,))."
+    )
+
+    
+
     return df_feat, feature_cols, cat_cols
 
 
