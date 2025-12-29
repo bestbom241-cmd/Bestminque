@@ -58,7 +58,8 @@ def make_features(df: pd.DataFrame, cfg: Config) -> Tuple[pd.DataFrame, List[str
     df = _ensure_datetime(df, cfg.date_col)
     if df[cfg.date_col].notna().sum() == 0:
         raise ValueError(f"All values in '{cfg.date_col}' failed to parse as datetime. "
-                     f"Example raw values: {df[cfg.date_col].astype(str).head(5).tolist()}")
+                 f"Example raw values: {df[cfg.date_col].astype(str).head(5).tolist()}")
+
 
     df = df.sort_values([cfg.store_col, cfg.sku_col, cfg.date_col]).copy()
 
@@ -117,25 +118,62 @@ def make_features(df: pd.DataFrame, cfg: Config) -> Tuple[pd.DataFrame, List[str
     return df_feat, feature_cols, cat_cols
 
 
-def time_split(df_feat: pd.DataFrame, cfg: Config, train_end: str, val_end: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    train_end_dt = pd.to_datetime(train_end, dayfirst=True)
-    val_end_dt = pd.to_datetime(val_end, dayfirst=True)
+def time_split(df_feat: pd.DataFrame, cfg: Config, train_end: str, val_end: str):
+    # parse input dates (รองรับ dayfirst)
+    train_end_dt = pd.to_datetime(train_end, errors="coerce", dayfirst=True)
+    val_end_dt   = pd.to_datetime(val_end, errors="coerce", dayfirst=True)
 
+    if pd.isna(train_end_dt) or pd.isna(val_end_dt):
+        raise ValueError(f"Invalid train_end/val_end. Got train_end={train_end} val_end={val_end}")
+
+    # data date range
     min_dt = df_feat[cfg.date_col].min()
     max_dt = df_feat[cfg.date_col].max()
 
+    if pd.isna(min_dt) or pd.isna(max_dt):
+        raise ValueError(
+            f"Date parsing failed: df_feat[{cfg.date_col}] range is NaT -> NaT. "
+            f"Check date column name + date format."
+        )
+
+    # enforce ordering
+    if not (min_dt < train_end_dt < val_end_dt <= max_dt):
+        warmup = max(max(cfg.lags), max(cfg.roll_windows)) + cfg.horizon + 2
+        uniq_dates = pd.Series(df_feat[cfg.date_col].sort_values().unique())
+
+        if len(uniq_dates) > warmup + 5:
+            start_i = warmup
+            end_i = len(uniq_dates) - 1
+            train_i = start_i + int((end_i - start_i) * 0.8)
+            train_end_dt = pd.to_datetime(uniq_dates.iloc[train_i])
+            val_end_dt   = pd.to_datetime(uniq_dates.iloc[end_i])
+        else:
+            train_end_dt = min_dt
+            val_end_dt   = max_dt
+
+
+        raise ValueError(
+            f"Your split dates are out of range.\n"
+            f"Data range: {min_dt.date()} -> {max_dt.date()}\n"
+            f"Given: train_end={train_end_dt.date()}, val_end={val_end_dt.date()}\n"
+            f"Suggested: train_end={suggested_train.date()}, val_end={suggested_val.date()}\n"
+            f"Tip: choose min_date < train_end < val_end <= max_date."
+        )
+
     train = df_feat[df_feat[cfg.date_col] <= train_end_dt].copy()
-    val = df_feat[(df_feat[cfg.date_col] > train_end_dt) & (df_feat[cfg.date_col] <= val_end_dt)].copy()
+    val   = df_feat[(df_feat[cfg.date_col] > train_end_dt) & (df_feat[cfg.date_col] <= val_end_dt)].copy()
 
     if len(train) == 0 or len(val) == 0:
         raise ValueError(
-            f"Split empty! data range={min_dt} -> {max_dt}, "
-            f"train_end={train_end_dt}, val_end={val_end_dt}, "
-            f"train_rows={len(train)}, val_rows={len(val)}. "
-            f"Tip: ensure min_date < train_end < val_end <= max_date, and allow enough history for lags/rolling."
+            f"Split empty after filtering.\n"
+            f"Data range: {min_dt.date()} -> {max_dt.date()}\n"
+            f"Given: train_end={train_end_dt.date()}, val_end={val_end_dt.date()}\n"
+            f"Rows: train={len(train)}, val={len(val)}\n"
+            f"Tip: move train_end earlier and val_end later (but still within range)."
         )
 
     return train, val
+
 
 
 
