@@ -20,6 +20,7 @@ class Config:
     # feature params
     lags: Tuple[int, ...] = (1, 7, 14, 28)
     roll_windows: Tuple[int, ...] = (7, 14, 28)
+    horizon: int = 1
 
     # train params  👇
     horizon: int = 1
