@@ -9,7 +9,6 @@ from ml import Config, train_catboost, forecast_next_n
 
 st.set_page_config(page_title="Grocery Demand Forecast (CatBoost)", layout="wide")
 st.title("🛒 Grocery Demand Forecast App (CatBoost)")
-
 st.write("อัปโหลดข้อมูลยอดขาย → Train CatBoost → Forecast ต่อไปอีก N วัน")
 
 # -----------------------------
@@ -26,14 +25,12 @@ target_col = st.sidebar.text_input("sales column", value="sales")
 promo_col = st.sidebar.text_input("promo column (optional)", value="promo")
 price_col = st.sidebar.text_input("price column (optional)", value="price")
 
-st.sidebar.header("3) Train/Val Split")
-train_end = st.sidebar.text_input("Train end date (YYYY-MM-DD)", value="2025-10-31")
-val_end = st.sidebar.text_input("Val end date (YYYY-MM-DD)", value="2025-11-30")
-
 st.sidebar.header("4) Model Settings")
 iterations = st.sidebar.number_input("iterations", min_value=200, max_value=5000, value=2000, step=100)
 depth = st.sidebar.number_input("depth", min_value=4, max_value=12, value=8, step=1)
-learning_rate = st.sidebar.number_input("learning_rate", min_value=0.001, max_value=0.5, value=0.05, step=0.01, format="%.3f")
+learning_rate = st.sidebar.number_input(
+    "learning_rate", min_value=0.001, max_value=0.5, value=0.05, step=0.01, format="%.3f"
+)
 
 st.sidebar.header("5) Forecast Settings")
 n_days = st.sidebar.number_input("forecast days", min_value=1, max_value=60, value=14, step=1)
@@ -50,8 +47,23 @@ if "df" not in st.session_state:
 
 
 def load_data(file) -> pd.DataFrame:
-    df = pd.read_csv(file)
+    # low_memory=False ลด DtypeWarning ได้มาก
+    df = pd.read_csv(file, low_memory=False)
     return df
+
+
+def parse_dates_series(s: pd.Series) -> pd.Series:
+    """
+    Robust parse for dates like '16/8/2017', '2017-08-16', etc.
+    """
+    s = s.astype(str).str.strip()
+    dt = pd.to_datetime(s, errors="coerce", dayfirst=True)
+    if dt.notna().sum() == 0:
+        # fallback formats (optional)
+        dt = pd.to_datetime(s, errors="coerce", format="%d/%m/%Y")
+    if dt.notna().sum() == 0:
+        dt = pd.to_datetime(s, errors="coerce", format="%Y-%m-%d")
+    return dt
 
 
 if uploaded is None:
@@ -62,14 +74,43 @@ df = load_data(uploaded)
 st.session_state.df = df
 
 st.subheader("Preview Data")
-st.dataframe(df.head(50), use_container_width=True)
+st.dataframe(df.head(50), width="stretch")
 
+# -----------------------------
 # Validate columns
+# -----------------------------
 required = [date_col, store_col, sku_col, target_col]
 missing = [c for c in required if c not in df.columns]
 if missing:
     st.error(f"Missing required columns: {missing}")
     st.stop()
+
+# -----------------------------
+# Train/Val Split (derive default from data)
+# -----------------------------
+st.sidebar.header("3) Train/Val Split")
+
+tmp_dt = parse_dates_series(df[date_col])
+min_dt, max_dt = tmp_dt.min(), tmp_dt.max()
+
+if pd.isna(min_dt) or pd.isna(max_dt):
+    st.sidebar.warning("Cannot parse date column to suggest split. Please enter dates manually.")
+    train_end = st.sidebar.text_input("Train end date (YYYY-MM-DD)", value="")
+    val_end = st.sidebar.text_input("Val end date (YYYY-MM-DD)", value="")
+else:
+    # default: last 30 days as validation
+    default_val_end = max_dt.date().isoformat()
+    default_train_end = (max_dt - pd.Timedelta(days=30)).date().isoformat()
+
+    train_end = st.sidebar.text_input("Train end date (YYYY-MM-DD)", value=default_train_end)
+    val_end = st.sidebar.text_input("Val end date (YYYY-MM-DD)", value=default_val_end)
+
+    st.sidebar.caption(f"Data range: {min_dt.date()} → {max_dt.date()}")
+    st.sidebar.caption(f"Default split: train_end={default_train_end}, val_end={default_val_end}")
+
+# quick guard: unique dates
+n_dates = int(tmp_dt.dropna().nunique())
+st.sidebar.caption(f"Unique dates detected: {n_dates}")
 
 # Optional columns if exist
 promo_col_use = promo_col if promo_col in df.columns and promo_col.strip() != "" else None
@@ -91,7 +132,7 @@ cfg = Config(
 # -----------------------------
 # Train button
 # -----------------------------
-colA, colB, colC = st.columns([1,1,1])
+colA, colB, colC = st.columns([1, 1, 1])
 
 with colA:
     if st.button("🚀 Train CatBoost", type="primary"):
@@ -102,11 +143,10 @@ with colA:
                 st.session_state.model_info = info
                 st.success("Training complete!")
             except Exception as e:
-                # แสดงข้อความ error แบบไม่ถูก redacted
                 st.error("Training failed:")
                 st.code(str(e))
+                st.exception(e)  # ให้เห็น error จริง + stacktrace
                 st.stop()
-
 
 with colB:
     if st.button("💾 Save model to model.cbm"):
@@ -125,6 +165,7 @@ with colC:
             st.success("Loaded model.cbm (note: feature list comes from last training config)")
         except Exception as e:
             st.error(f"Load failed: {e}")
+            st.exception(e)
 
 # Show training info
 if st.session_state.model_info:
@@ -147,7 +188,12 @@ st.subheader("Select Store / SKU")
 store_values = df[store_col].dropna().unique().tolist()
 sku_values = df[sku_col].dropna().unique().tolist()
 
+if len(store_values) == 0 or len(sku_values) == 0:
+    st.error("store_id / sku_id ไม่มีข้อมูลให้เลือก")
+    st.stop()
+
 sel_store = st.selectbox("Store", store_values, index=0)
+
 # filter SKU options by store for convenience
 df_store = df[df[store_col] == sel_store]
 sku_values2 = df_store[sku_col].dropna().unique().tolist()
@@ -155,15 +201,18 @@ sel_sku = st.selectbox("SKU", sku_values2 if len(sku_values2) else sku_values, i
 
 # Plot history
 hist = df_store[df_store[sku_col] == sel_sku].copy()
-hist[date_col] = pd.to_datetime(hist[date_col])
-hist = hist.sort_values(date_col)
+hist[date_col] = parse_dates_series(hist[date_col])
+hist = hist.dropna(subset=[date_col]).sort_values(date_col)
 
 st.subheader("History")
-fig = plt.figure()
-plt.plot(hist[date_col], hist[target_col])
-plt.xlabel("date")
-plt.ylabel("sales")
-st.pyplot(fig)
+if len(hist) == 0:
+    st.warning("Series นี้ไม่มี date ที่ parse ได้")
+else:
+    fig = plt.figure()
+    plt.plot(hist[date_col], pd.to_numeric(hist[target_col], errors="coerce"))
+    plt.xlabel("date")
+    plt.ylabel("sales")
+    st.pyplot(fig)
 
 # -----------------------------
 # Forecast
@@ -182,11 +231,11 @@ if st.button("📈 Forecast", type="primary"):
         )
 
         st.subheader("Forecast Result")
-        st.dataframe(fc, use_container_width=True)
+        st.dataframe(fc, width="stretch")
 
         # plot
         fig2 = plt.figure()
-        plt.plot(hist[date_col], hist[target_col], label="actual")
+        plt.plot(hist[date_col], pd.to_numeric(hist[target_col], errors="coerce"), label="actual")
         plt.plot(fc["date"], fc["forecast"], label="forecast")
         plt.xlabel("date")
         plt.ylabel("sales")
@@ -203,4 +252,5 @@ if st.button("📈 Forecast", type="primary"):
         )
     except Exception as e:
         st.error(f"Forecast failed: {e}")
+        st.exception(e)
         st.info("ทิป: ถ้า error บอกว่า history ไม่พอ ให้เลือก SKU/Store ที่มีข้อมูลยาวขึ้น หรือเพิ่มข้อมูลย้อนหลัง")
